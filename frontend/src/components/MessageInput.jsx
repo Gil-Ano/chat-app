@@ -1,14 +1,17 @@
 import { useState, useRef } from "react";
 import EmojiPicker from "emoji-picker-react";
+import toast from "react-hot-toast";
 
-function MessageInput({ onSend, onTyping }) {
+function MessageInput({ onSend, onTyping, token }) {
   const [message, setMessage] = useState("");
   const [showEmoji, setShowEmoji] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef(null);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!message.trim()) return;
-    onSend(message);
+    onSend(message, "text");
     setMessage("");
     setShowEmoji(false);
   };
@@ -20,6 +23,32 @@ function MessageInput({ onSend, onTyping }) {
 
   const onEmojiClick = (emojiData) => {
     setMessage((prev) => prev + emojiData.emoji);
+  };
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("http://localhost:5002/api/upload", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const isImage = file.type.startsWith("image/");
+        onSend(data.url, isImage ? "image" : "file");
+        toast.success("File uploaded!");
+      } else {
+        toast.error(data.message);
+      }
+    } catch (err) {
+      toast.error("Upload failed");
+    }
+    setUploading(false);
   };
 
   return (
@@ -37,12 +66,28 @@ function MessageInput({ onSend, onTyping }) {
         >
           😊
         </button>
+        <button
+          type="button"
+          onClick={() => fileRef.current.click()}
+          className="text-gray-400 hover:text-white text-xl"
+          disabled={uploading}
+        >
+          📎
+        </button>
+        <input
+          type="file"
+          ref={fileRef}
+          onChange={handleFileUpload}
+          className="hidden"
+          accept="image/*,.pdf,.doc,.docx"
+        />
         <input
           type="text"
-          value={message}
+          value={uploading ? "Uploading..." : message}
           onChange={handleChange}
           placeholder="Type a message..."
-          className="flex-1 bg-gray-700 text-white rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
+          disabled={uploading}
+          className="flex-1 bg-gray-700 text-white rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
         />
         <button
           type="submit"

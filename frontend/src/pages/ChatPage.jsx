@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useSocket } from "../context/SocketContext";
 import Sidebar from "../components/Sidebar";
@@ -15,7 +15,7 @@ function ChatPage() {
   const [activeRoom, setActiveRoom] = useState(null);
   const [activeDM, setActiveDM] = useState(null);
   const [typingUser, setTypingUser] = useState("");
-  const [typingTimeout, setTypingTimeout] = useState(null);
+  const [unreadCounts, setUnreadCounts] = useState({});
 
   const headers = {
     Authorization: `Bearer ${token}`,
@@ -44,6 +44,7 @@ function ChatPage() {
   useEffect(() => {
     if (!activeRoom) return;
     socket?.emit("join_room", activeRoom.name);
+    setUnreadCounts((prev) => ({ ...prev, [activeRoom.name]: 0 }));
     fetch(`http://localhost:5002/api/messages/${activeRoom.name}`, { headers })
       .then((res) => res.json())
       .then(setMessages);
@@ -51,6 +52,7 @@ function ChatPage() {
 
   useEffect(() => {
     if (!activeDM) return;
+    setUnreadCounts((prev) => ({ ...prev, [activeDM._id]: 0 }));
     fetch(`http://localhost:5002/api/messages/direct/${activeDM._id}`, {
       headers,
     })
@@ -63,10 +65,22 @@ function ChatPage() {
 
     socket.on("receive_message", (message) => {
       setMessages((prev) => [...prev, message]);
+      if (message.room !== activeRoom?.name) {
+        setUnreadCounts((prev) => ({
+          ...prev,
+          [message.room]: (prev[message.room] || 0) + 1,
+        }));
+      }
     });
 
     socket.on("receive_dm", (message) => {
       setMessages((prev) => [...prev, message]);
+      if (message.sender?._id !== activeDM?._id) {
+        setUnreadCounts((prev) => ({
+          ...prev,
+          [message.sender?._id]: (prev[message.sender?._id] || 0) + 1,
+        }));
+      }
     });
 
     socket.on("user_typing", (data) => {
@@ -79,21 +93,23 @@ function ChatPage() {
       socket.off("receive_dm");
       socket.off("user_typing");
     };
-  }, [socket]);
+  }, [socket, activeRoom, activeDM]);
 
-  const handleSend = (content) => {
+  const handleSend = (content, type = "text") => {
     if (!socket) return;
     if (activeRoom) {
       socket.emit("send_message", {
         senderId: user.id,
         room: activeRoom.name,
         content,
+        type,
       });
     } else if (activeDM) {
       socket.emit("send_dm", {
         senderId: user.id,
         receiverId: activeDM._id,
         content,
+        type,
       });
     }
   };
@@ -136,6 +152,7 @@ function ChatPage() {
         activeDM={activeDM}
         setActiveDM={setActiveDM}
         onCreateRoom={handleCreateRoom}
+        unreadCounts={unreadCounts}
       />
       <div className="flex-1 flex flex-col">
         {activeRoom || activeDM ? (
@@ -145,7 +162,11 @@ function ChatPage() {
               typingUser={typingUser}
               title={title}
             />
-            <MessageInput onSend={handleSend} onTyping={handleTyping} />
+            <MessageInput
+              onSend={handleSend}
+              onTyping={handleTyping}
+              token={token}
+            />
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center text-gray-400 text-xl">

@@ -16,6 +16,44 @@ function ChatWindow({ messages, typingUser, title }) {
       )
     : messages;
 
+  const isMyMessage = (msg) => {
+    return msg.sender?._id === user?.id || msg.sender?.id === user?.id;
+  };
+
+  const renderContent = (msg) => {
+    if (msg.type === "image") {
+      return (
+        <img
+          src={msg.content}
+          alt="shared"
+          className="max-w-xs rounded-lg mt-1 cursor-pointer"
+          onClick={() => window.open(msg.content, "_blank")}
+        />
+      );
+    }
+    if (msg.type === "file") {
+      return (
+        <a
+          href={msg.content}
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center gap-2 text-blue-300 underline mt-1"
+        >
+          📎 Download file
+        </a>
+      );
+    }
+    return <p className="text-sm">{msg.content}</p>;
+  };
+
+  const renderReadReceipt = (msg) => {
+    if (!isMyMessage(msg)) return null;
+    if (msg.readBy && msg.readBy.length > 0) {
+      return <p className="text-xs opacity-60 mt-0.5">✓✓ Seen</p>;
+    }
+    return <p className="text-xs opacity-60 mt-0.5">✓ Delivered</p>;
+  };
+
   return (
     <div className="flex-1 flex flex-col bg-gray-900">
       <div className="p-4 border-b border-gray-700 flex justify-between items-center">
@@ -32,23 +70,24 @@ function ChatWindow({ messages, typingUser, title }) {
         {filtered.map((msg, i) => (
           <div
             key={i}
-            className={`flex ${msg.sender?._id === user?.id || msg.sender?.id === user?.id ? "justify-end" : "justify-start"}`}
+            className={`flex ${isMyMessage(msg) ? "justify-end" : "justify-start"}`}
           >
             <div
-              className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${msg.sender?._id === user?.id || msg.sender?.id === user?.id ? "bg-blue-600 text-white" : "bg-gray-700 text-white"}`}
+              className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${isMyMessage(msg) ? "bg-blue-600 text-white" : "bg-gray-700 text-white"}`}
             >
-              {msg.sender?._id !== user?.id && msg.sender?.id !== user?.id && (
+              {!isMyMessage(msg) && (
                 <p className="text-xs text-blue-300 mb-1 font-semibold">
                   {msg.sender?.name}
                 </p>
               )}
-              <p className="text-sm">{msg.content}</p>
+              {renderContent(msg)}
               <p className="text-xs opacity-60 mt-1">
                 {new Date(msg.createdAt || Date.now()).toLocaleTimeString([], {
                   hour: "2-digit",
                   minute: "2-digit",
                 })}
               </p>
+              {renderReadReceipt(msg)}
               {msg.reactions?.length > 0 && (
                 <div className="flex gap-1 mt-1">
                   {msg.reactions.map((r, ri) => (
