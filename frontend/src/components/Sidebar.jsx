@@ -11,8 +11,9 @@ function Sidebar({
   activeDM,
   setActiveDM,
   onCreateRoom,
+  unreadCounts,
 }) {
-  const { user, logout } = useAuth();
+  const { user, token, logout } = useAuth();
   const { onlineUsers } = useSocket();
   const navigate = useNavigate();
 
@@ -25,6 +26,22 @@ function Sidebar({
     logout();
     toast.success("Logged out");
     navigate("/login");
+  };
+
+  const handleBlock = async (userId) => {
+    await fetch(`http://localhost:5002/api/users/block/${userId}`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    toast.success("User blocked");
+  };
+
+  const handleUnblock = async (userId) => {
+    await fetch(`http://localhost:5002/api/users/unblock/${userId}`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    toast.success("User unblocked");
   };
 
   return (
@@ -54,9 +71,14 @@ function Sidebar({
                 setActiveRoom(room);
                 setActiveDM(null);
               }}
-              className={`w-full text-left px-3 py-2 rounded text-sm mb-1 ${activeRoom?._id === room._id ? "bg-blue-600 text-white" : "text-gray-300 hover:bg-gray-700"}`}
+              className={`w-full text-left px-3 py-2 rounded text-sm mb-1 flex justify-between items-center ${activeRoom?._id === room._id ? "bg-blue-600 text-white" : "text-gray-300 hover:bg-gray-700"}`}
             >
-              # {room.name}
+              <span># {room.name}</span>
+              {unreadCounts?.[room.name] > 0 && (
+                <span className="bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
+                  {unreadCounts[room.name]}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -66,19 +88,39 @@ function Sidebar({
             Direct Messages
           </span>
           {users.map((u) => (
-            <button
-              key={u._id}
-              onClick={() => {
-                setActiveDM(u);
-                setActiveRoom(null);
-              }}
-              className={`w-full text-left px-3 py-2 rounded text-sm mb-1 flex items-center gap-2 mt-1 ${activeDM?._id === u._id ? "bg-blue-600 text-white" : "text-gray-300 hover:bg-gray-700"}`}
-            >
-              <span
-                className={`w-2 h-2 rounded-full ${onlineUsers.includes(u._id) ? "bg-green-400" : "bg-gray-500"}`}
-              ></span>
-              {u.name}
-            </button>
+            <div key={u._id} className="group relative">
+              <button
+                onClick={() => {
+                  setActiveDM(u);
+                  setActiveRoom(null);
+                }}
+                className={`w-full text-left px-3 py-2 rounded text-sm mb-1 flex items-center gap-2 mt-1 ${activeDM?._id === u._id ? "bg-blue-600 text-white" : "text-gray-300 hover:bg-gray-700"}`}
+              >
+                <span
+                  className={`w-2 h-2 rounded-full flex-shrink-0 ${onlineUsers.includes(u._id) ? "bg-green-400" : "bg-gray-500"}`}
+                ></span>
+                <span className="flex-1">{u.name}</span>
+                {unreadCounts?.[u._id] > 0 && (
+                  <span className="bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
+                    {unreadCounts[u._id]}
+                  </span>
+                )}
+              </button>
+              <div className="absolute right-2 top-2 hidden group-hover:flex gap-1">
+                <button
+                  onClick={() => handleBlock(u._id)}
+                  className="text-xs bg-red-600 text-white px-1.5 py-0.5 rounded hover:bg-red-500"
+                >
+                  Block
+                </button>
+                <button
+                  onClick={() => handleUnblock(u._id)}
+                  className="text-xs bg-gray-600 text-white px-1.5 py-0.5 rounded hover:bg-gray-500"
+                >
+                  Unblock
+                </button>
+              </div>
+            </div>
           ))}
         </div>
       </div>

@@ -1,21 +1,35 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 
 function ChatWindow({ messages, typingUser, title }) {
   const { user } = useAuth();
   const bottomRef = useRef(null);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  const filtered = search
+    ? messages.filter((m) =>
+        m.content.toLowerCase().includes(search.toLowerCase()),
+      )
+    : messages;
+
   return (
     <div className="flex-1 flex flex-col bg-gray-900">
-      <div className="p-4 border-b border-gray-700">
+      <div className="p-4 border-b border-gray-700 flex justify-between items-center">
         <h2 className="text-white font-semibold text-lg">{title}</h2>
+        <input
+          type="text"
+          placeholder="Search messages..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="bg-gray-700 text-white rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 w-48"
+        />
       </div>
       <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
-        {messages.map((msg, i) => (
+        {filtered.map((msg, i) => (
           <div
             key={i}
             className={`flex ${msg.sender?._id === user?.id || msg.sender?.id === user?.id ? "justify-end" : "justify-start"}`}
@@ -30,7 +44,7 @@ function ChatWindow({ messages, typingUser, title }) {
               )}
               <p className="text-sm">{msg.content}</p>
               <p className="text-xs opacity-60 mt-1">
-                {new Date(msg.createdAt).toLocaleTimeString([], {
+                {new Date(msg.createdAt || Date.now()).toLocaleTimeString([], {
                   hour: "2-digit",
                   minute: "2-digit",
                 })}
