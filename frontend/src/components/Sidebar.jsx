@@ -3,6 +3,8 @@ import { useSocket } from "../context/SocketContext";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 
+const BACKEND_URL = "https://novchat-backend.onrender.com";
+
 function Sidebar({
   rooms,
   users,
@@ -18,7 +20,7 @@ function Sidebar({
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    await fetch("http://localhost:5002/api/auth/logout", {
+    await fetch(`${BACKEND_URL}/api/auth/logout`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId: user.id }),
@@ -29,7 +31,7 @@ function Sidebar({
   };
 
   const handleBlock = async (userId) => {
-    await fetch(`http://localhost:5002/api/users/block/${userId}`, {
+    await fetch(`${BACKEND_URL}/api/users/block/${userId}`, {
       method: "PUT",
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -37,7 +39,7 @@ function Sidebar({
   };
 
   const handleUnblock = async (userId) => {
-    await fetch(`http://localhost:5002/api/users/unblock/${userId}`, {
+    await fetch(`${BACKEND_URL}/api/users/unblock/${userId}`, {
       method: "PUT",
       headers: { Authorization: `Bearer ${token}` },
     });

@@ -6,6 +6,8 @@ import ChatWindow from "../components/ChatWindow";
 import MessageInput from "../components/MessageInput";
 import toast from "react-hot-toast";
 
+const BACKEND_URL = "https://novchat-backend.onrender.com";
+
 function ChatPage() {
   const { user, token } = useAuth();
   const { socket } = useSocket();
@@ -23,14 +25,14 @@ function ChatPage() {
   };
 
   useEffect(() => {
-    fetch("http://localhost:5002/api/rooms", { headers })
+    fetch(`${BACKEND_URL}/api/rooms`, { headers })
       .then((res) => res.json())
       .then((data) => {
         setRooms(data);
         setActiveRoom(data[0]);
       });
 
-    fetch("http://localhost:5002/api/users", { headers })
+    fetch(`${BACKEND_URL}/api/users`, { headers })
       .then((res) => res.json())
       .then(setUsers);
   }, []);
@@ -45,7 +47,7 @@ function ChatPage() {
     if (!activeRoom) return;
     socket?.emit("join_room", activeRoom.name);
     setUnreadCounts((prev) => ({ ...prev, [activeRoom.name]: 0 }));
-    fetch(`http://localhost:5002/api/messages/${activeRoom.name}`, { headers })
+    fetch(`${BACKEND_URL}/api/messages/${activeRoom.name}`, { headers })
       .then((res) => res.json())
       .then(setMessages);
   }, [activeRoom]);
@@ -53,9 +55,7 @@ function ChatPage() {
   useEffect(() => {
     if (!activeDM) return;
     setUnreadCounts((prev) => ({ ...prev, [activeDM._id]: 0 }));
-    fetch(`http://localhost:5002/api/messages/direct/${activeDM._id}`, {
-      headers,
-    })
+    fetch(`${BACKEND_URL}/api/messages/direct/${activeDM._id}`, { headers })
       .then((res) => res.json())
       .then(setMessages);
   }, [activeDM]);
@@ -122,7 +122,7 @@ function ChatPage() {
   const handleCreateRoom = async () => {
     const name = prompt("Enter room name:");
     if (!name) return;
-    const res = await fetch("http://localhost:5002/api/rooms", {
+    const res = await fetch(`${BACKEND_URL}/api/rooms`, {
       method: "POST",
       headers,
       body: JSON.stringify({ name, description: "" }),

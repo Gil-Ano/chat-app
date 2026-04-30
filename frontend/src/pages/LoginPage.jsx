@@ -4,6 +4,8 @@ import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 import { useSocket } from "../context/SocketContext";
 
+const BACKEND_URL = "https://novchat-backend.onrender.com";
+
 function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -16,7 +18,7 @@ function LoginPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5002/api/auth/login", {
+      const res = await fetch(`${BACKEND_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),

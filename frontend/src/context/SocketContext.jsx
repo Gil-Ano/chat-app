@@ -3,7 +3,7 @@ import { io } from "socket.io-client";
 
 const SocketContext = createContext();
 
-const BACKEND_URL = "http://localhost:5002";
+const BACKEND_URL = "https://novchat-backend.onrender.com";
 
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);

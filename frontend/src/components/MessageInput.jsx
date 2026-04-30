@@ -2,6 +2,8 @@ import { useState, useRef } from "react";
 import EmojiPicker from "emoji-picker-react";
 import toast from "react-hot-toast";
 
+const BACKEND_URL = "https://novchat-backend.onrender.com";
+
 function MessageInput({ onSend, onTyping, token }) {
   const [message, setMessage] = useState("");
   const [showEmoji, setShowEmoji] = useState(false);
@@ -32,7 +34,7 @@ function MessageInput({ onSend, onTyping, token }) {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await fetch("http://localhost:5002/api/upload", {
+      const res = await fetch(`${BACKEND_URL}/api/upload`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
